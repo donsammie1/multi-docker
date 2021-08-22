@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - docker build -t sakemu/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true sakemu/react-test npm test
+
+after_success:
+  - docker build -t sakemu/multi-client ./client
+  - docker build -t sakemu/multi-nginx ./nginx
+  - docker build -t sakemu/multi-server ./server
+  - docker build -t sakemu/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push sakemu/multi-client
+  - docker push sakemu/multi-nginx
+  - docker push sakemu/multi-server
+  - docker push sakemu/multi-worker
